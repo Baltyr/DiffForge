@@ -34,8 +34,7 @@ public sealed partial class TextCompareView
         _detailsPanel = new Border
         {
             BorderThickness = new Thickness(0, 1, 0, 0),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(60, 128, 128, 128)),
-            Padding = new Thickness(0, 4),
+            Padding = new Thickness(6, 6),
             Child = new ScrollViewer
             {
                 HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
@@ -43,6 +42,7 @@ public sealed partial class TextCompareView
                 Content = new StackPanel { Children = { _detailRuler, _detailLeft, _detailRight, _hexLeft, _hexRight, _alignLeft, _alignRight } },
             },
         };
+        _detailsPanel.Classes.Add("chrome");
         return _detailsPanel;
     }
 

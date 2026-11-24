@@ -104,8 +104,8 @@ public static class AppCommands
             new(Cmd.AlignWith, EditMenu, "Alinear con…", "Ctrl+Alt+A", Separator: true),
             new(Cmd.Isolate, EditMenu, "Aislar", "Ctrl+Alt+X"),
             new(Cmd.AddReplacement, EditMenu, "Agregar reemplazo…"),
-            new(Cmd.CopyToRight, EditMenu, "Copiar a la derecha", "Ctrl+R", Separator: true, ToolbarGlyph: "→", ToolbarLabel: "Copiar →"),
-            new(Cmd.CopyToLeft, EditMenu, "Copiar a la izquierda", "Ctrl+L", ToolbarGlyph: "←", ToolbarLabel: "← Copiar"),
+            new(Cmd.CopyToRight, EditMenu, "Copiar a la derecha", "Ctrl+R", Separator: true, ToolbarGlyph: "→", ToolbarLabel: "A derecha"),
+            new(Cmd.CopyToLeft, EditMenu, "Copiar a la izquierda", "Ctrl+L", ToolbarGlyph: "←", ToolbarLabel: "A izquierda"),
             new(Cmd.CopyToOtherSide, EditMenu, "Copiar al otro lado", "Ctrl+Shift+Enter"),
             new(Cmd.CopyLineToRight, EditMenu, "Copiar línea a la derecha", "Alt+Right"),
             new(Cmd.CopyLineToLeft, EditMenu, "Copiar línea a la izquierda", "Alt+Left"),
@@ -193,4 +193,26 @@ public static class AppCommands
     }
 
     public static CommandDef Get(Cmd id) => All.First(c => c.Id == id);
+
+    /// <summary>Íconos de la barra en Segoe Fluent Icons / MDL2 (Windows). En otros sistemas se usa ToolbarGlyph.</summary>
+    public static IReadOnlyDictionary<Cmd, string> FluentIcons { get; } = new Dictionary<Cmd, string>
+    {
+        [Cmd.SessionSettings] = "",
+        [Cmd.SwapSides] = "",
+        [Cmd.ReloadFiles] = "",
+        [Cmd.OpenFile] = "",
+        [Cmd.SaveFile] = "",
+        [Cmd.CopyToRight] = "",
+        [Cmd.CopyToLeft] = "",
+        [Cmd.NextSection] = "",
+        [Cmd.PreviousSection] = "",
+        [Cmd.Find] = "",
+        [Cmd.ShowAll] = "",
+        [Cmd.ShowDifferences] = "",
+        [Cmd.ShowSame] = "",
+        [Cmd.ShowContext] = "",
+        [Cmd.IgnoreUnimportant] = "",
+        [Cmd.VisibleWhitespace] = "",
+        [Cmd.WordWrap] = "",
+    };
 }

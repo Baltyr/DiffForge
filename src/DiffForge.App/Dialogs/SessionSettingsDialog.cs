@@ -181,7 +181,7 @@ public sealed class SessionSettingsDialog : DialogBase
         {
             Items =
             {
-                new TabItem { Header = "Specs", Content = specs },
+                new TabItem { Header = "Archivos", Content = specs },
                 new TabItem { Header = "Formato", Content = format },
                 new TabItem { Header = "Importancia", Content = importance },
                 new TabItem { Header = "Alineación", Content = alignment },

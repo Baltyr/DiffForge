@@ -5,7 +5,21 @@
     <RootNamespace>DiffForge.App</RootNamespace>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\diffforge.ico</ApplicationIcon>
+
+    <!-- Metadatos visibles en Propiedades ▸ Detalles del .exe -->
+    <Product>DiffForge</Product>
+    <AssemblyTitle>DiffForge</AssemblyTitle>
+    <Description>Comparador de archivos de texto</Description>
+    <Company>Baltyr</Company>
+    <Copyright>© 2026 Baltyr</Copyright>
+    <Version>1.0.0</Version>
+    <InformationalVersion>1.0.0</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.2.3" />
     <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />

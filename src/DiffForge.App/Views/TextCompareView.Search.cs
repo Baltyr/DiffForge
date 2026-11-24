@@ -24,19 +24,22 @@ public sealed partial class TextCompareView
 
     private Control BuildFindPanel()
     {
-        _findText = new AutoCompleteBox { Watermark = "Texto o expresión regular", MinWidth = 260, FilterMode = AutoCompleteFilterMode.StartsWith };
+        _findText = new AutoCompleteBox { Watermark = "Texto o expresión regular", MinWidth = 230, FilterMode = AutoCompleteFilterMode.StartsWith };
         _findText.ItemsSource = AppSettings.Current.FindHistory;
         _findText.KeyDown += (_, e) =>
         {
             if (e.Key == Key.Enter) { FindNext(!e.KeyModifiers.HasFlag(KeyModifiers.Shift)); e.Handled = true; }
             if (e.Key == Key.Escape) HideFind();
         };
-        _replaceText = new TextBox { Watermark = "Reemplazar con", MinWidth = 260 };
+        _replaceText = new TextBox { Watermark = "Reemplazar con", MinWidth = 230 };
         _findRegex = new CheckBox { Content = "Regex" };
         _findCase = new CheckBox { Content = "Mayúsculas" };
-        _findWhole = new CheckBox { Content = "Palabra completa" };
-        _findWrap = new CheckBox { Content = "Continuar al inicio", IsChecked = true };
-        _findAutoClose = new CheckBox { Content = "Cerrar al buscar" };
+        _findWhole = new CheckBox { Content = "Palabra" };
+        ToolTip.SetTip(_findWhole, "Solo palabras completas");
+        _findWrap = new CheckBox { Content = "Circular", IsChecked = true };
+        ToolTip.SetTip(_findWrap, "Al llegar al final, continuar desde el inicio");
+        _findAutoClose = new CheckBox { Content = "Autocerrar" };
+        ToolTip.SetTip(_findAutoClose, "Cerrar esta barra al encontrar una coincidencia");
         _findSides = new ComboBox { ItemsSource = new[] { "Ambos lados", "Izquierda", "Derecha" }, SelectedIndex = 0 };
         _findStatus = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Opacity = 0.8 };
 
@@ -57,51 +60,65 @@ public sealed partial class TextCompareView
         }
         regexHelp.Flyout = helpMenu;
 
-        Button B(string text, Action action)
+        Button B(string text, Action action, bool primary = false)
         {
-            var b = new Button { Content = text, Padding = new Thickness(10, 3) };
+            var b = new Button { Content = text, Padding = new Thickness(12, 4), CornerRadius = new CornerRadius(6) };
+            if (primary) b.Classes.Add("accent");
             b.Click += (_, _) => action();
             return b;
         }
 
-        var findRow = new StackPanel
+        TextBlock Label(string text) => new() { Text = text, VerticalAlignment = VerticalAlignment.Center, Width = 72 };
+
+        _findText.CornerRadius = _replaceText.CornerRadius = new CornerRadius(6);
+        var findRow = new WrapPanel
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 6,
             Children =
             {
-                new TextBlock { Text = "Buscar:", VerticalAlignment = VerticalAlignment.Center, Width = 80 },
-                _findText, regexHelp,
-                B("Siguiente", () => FindNext(true)),
-                B("Anterior", () => FindNext(false)),
-                B("Marcar todo", MarkAll),
-                _findSides, _findRegex, _findCase, _findWhole, _findWrap, _findAutoClose,
-                B("✕", HideFind),
-                _findStatus,
+                Label("Buscar"), _findText, Spaced(regexHelp),
+                Spaced(B("Siguiente", () => FindNext(true), primary: true)),
+                Spaced(B("Anterior", () => FindNext(false))),
+                Spaced(B("Marcar todo", MarkAll)),
+                Spaced(_findSides, 12), Spaced(_findRegex, 12), Spaced(_findCase), Spaced(_findWhole), Spaced(_findWrap), Spaced(_findAutoClose),
+                Spaced(_findStatus, 12),
             },
         };
         _replaceRow = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 6,
+            Margin = new Thickness(0, 6, 0, 0),
             Children =
             {
-                new TextBlock { Text = "Reemplazar:", VerticalAlignment = VerticalAlignment.Center, Width = 80 },
+                Label("Reemplazar"),
                 _replaceText,
                 B("Reemplazar", ReplaceCurrent),
                 B("Reemplazar todo", ReplaceAll),
             },
         };
 
+        var close = new Button { Content = "✕", FontSize = 11, Padding = new Thickness(8, 4), VerticalAlignment = VerticalAlignment.Top };
+        close.Classes.Add("subtle");
+        ToolTip.SetTip(close, "Cerrar (Esc)");
+        close.Click += (_, _) => HideFind();
+        DockPanel.SetDock(close, Avalonia.Controls.Dock.Right);
+
         _findPanel = new Border
         {
             IsVisible = false,
-            Padding = new Thickness(8, 6),
+            Padding = new Thickness(10, 8),
             BorderThickness = new Thickness(0, 0, 0, 1),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(60, 128, 128, 128)),
-            Child = new StackPanel { Spacing = 4, Children = { findRow, _replaceRow } },
+            Child = new DockPanel { Children = { close, new StackPanel { Children = { findRow, _replaceRow } } } },
         };
+        _findPanel.Classes.Add("chrome");
         return _findPanel;
+
+        static Control Spaced(Control c, double left = 6)
+        {
+            c.Margin = new Thickness(left, 0, 0, 0);
+            c.VerticalAlignment = VerticalAlignment.Center;
+            return c;
+        }
     }
 
     private void ShowFind(bool replace)

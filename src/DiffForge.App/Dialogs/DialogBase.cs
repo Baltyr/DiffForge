@@ -21,20 +21,24 @@ public class DialogBase : Window
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
         CanResize = true;
+        Icon = Services.AppIcon.Load();
 
         var ok = new Button { Content = "Aceptar", IsDefault = true, MinWidth = 90, HorizontalContentAlignment = HorizontalAlignment.Center };
         var cancel = new Button { Content = "Cancelar", IsCancel = true, MinWidth = 90, HorizontalContentAlignment = HorizontalAlignment.Center };
+        ok.Classes.Add("accent");
         ok.Click += (_, _) => { if (Validate()) Close(true); };
         cancel.Click += (_, _) => Close(false);
 
-        Buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(12) };
+        Buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right };
         Buttons.Children.Add(ok);
         Buttons.Children.Add(cancel);
+        var footer = new Border { Child = Buttons, Padding = new Thickness(16, 12), BorderThickness = new Thickness(0, 1, 0, 0) };
+        footer.Classes.Add("chrome");
 
         var root = new DockPanel();
-        DockPanel.SetDock(Buttons, Dock.Bottom);
-        root.Children.Add(Buttons);
-        _host.Margin = new Thickness(12, 12, 12, 0);
+        DockPanel.SetDock(footer, Dock.Bottom);
+        root.Children.Add(footer);
+        _host.Margin = new Thickness(16, 14, 16, 10);
         root.Children.Add(_host);
         base.Content = root;
 
@@ -98,13 +102,14 @@ public static class MessageBox
         {
             string text = buttons[i];
             var button = new Button { Content = text, MinWidth = 90, IsDefault = i == 0, IsCancel = i == buttons.Length - 1, HorizontalContentAlignment = HorizontalAlignment.Center };
+            if (i == 0) button.Classes.Add("accent");
             button.Click += (_, _) => { result = text; window.Close(); };
             panel.Children.Add(button);
         }
         window.Content = new StackPanel
         {
-            Margin = new Thickness(18),
-            Spacing = 16,
+            Margin = new Thickness(22, 20),
+            Spacing = 18,
             Children =
             {
                 new SelectableTextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 580 },
@@ -121,5 +126,65 @@ public static class MessageBox
         var dialog = new DialogBase(title, 420, 170) { Content = DialogBase.Form((label, box)) };
         dialog.Opened += (_, _) => { box.Focus(); box.SelectAll(); };
         return await dialog.ShowAsync(owner) ? box.Text : null;
+    }
+}
+
+/// <summary>"Acerca de": logo, versión y descripción.</summary>
+public sealed class AboutDialog : Window
+{
+    public AboutDialog()
+    {
+        Title = "Acerca de DiffForge";
+        SizeToContent = SizeToContent.WidthAndHeight;
+        CanResize = false;
+        ShowInTaskbar = false;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        Icon = Services.AppIcon.Load();
+
+        var version = typeof(AboutDialog).Assembly
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "1.0.0";
+
+        var ok = new Button { Content = "Cerrar", MinWidth = 90, IsDefault = true, IsCancel = true, HorizontalAlignment = HorizontalAlignment.Right, HorizontalContentAlignment = HorizontalAlignment.Center };
+        ok.Classes.Add("accent");
+        ok.Click += (_, _) => Close();
+
+        var muted = new TextBlock { Text = $"Versión {version}  ·  .NET {Environment.Version.ToString(2)}  ·  Avalonia", FontSize = 12 };
+        muted.Classes.Add("muted");
+        Content = new StackPanel
+        {
+            Margin = new Thickness(28, 24),
+            Spacing = 14,
+            Width = 380,
+            Children =
+            {
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 16,
+                    Children =
+                    {
+                        Services.AppIcon.CreateLogoControl(64),
+                        new StackPanel
+                        {
+                            VerticalAlignment = VerticalAlignment.Center,
+                            Spacing = 2,
+                            Children =
+                            {
+                                new TextBlock { Text = "DiffForge", FontSize = 24, FontWeight = FontWeight.SemiBold },
+                                muted,
+                            },
+                        },
+                    },
+                },
+                new TextBlock
+                {
+                    Text = "Comparador de archivos de texto: alineación por líneas, diferencias dentro de la línea, reglas de importancia, gramáticas por lenguaje y edición en vivo.",
+                    TextWrapping = TextWrapping.Wrap,
+                },
+                new TextBlock { Text = "© 2026 Baltyr · github.com/Baltyr/DiffForge", FontSize = 12, Classes = { "muted" } },
+                ok,
+            },
+        };
     }
 }

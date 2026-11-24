@@ -1,3 +1,5 @@
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 using AvaloniaEdit;
 using AvaloniaEdit.Document;
@@ -19,7 +21,6 @@ public sealed class DiffPane
 {
     private readonly HashSet<DocumentLine> _fillers = [];
     private readonly Dictionary<DocumentLine, LineEnding> _endings = [];
-    private readonly List<CollapsedLineSection> _collapsed = [];
     private FoldingManager? _folding;
     private DocumentLine? _originalLast;
     private bool _fileEndsWithoutNewline;
@@ -41,7 +42,9 @@ public sealed class DiffPane
         Editor.Options.AllowScrollBelowDocument = false;
         Editor.Options.EnableHyperlinks = false;
         Editor.Options.EnableEmailHyperlinks = false;
-        Editor.Options.HighlightCurrentLine = true;
+        Editor.Options.HighlightCurrentLine = side == Side.Left;
+        TextView.Bind(TextView.CurrentLineBackgroundProperty, Editor.GetResourceObservable("DfCurrentLineBrush"));
+        TextView.CurrentLineBorder = null;
         Editor.Options.EnableTextDragDrop = true;
         Editor.Document.UndoStack.SizeLimit = 0;
 
@@ -173,34 +176,32 @@ public sealed class DiffPane
         ClearFilter();
         if (hiddenRuns.Count == 0) return;
 
-        if (showCounts)
-        {
-            _folding ??= FoldingManager.Install(Editor.TextArea);
-            foreach (var margin in Editor.TextArea.LeftMargins.OfType<FoldingMargin>().ToList())
-                Editor.TextArea.LeftMargins.Remove(margin);
+        // Se usa siempre un plegado: deja una fila visible por tramo (con o sin contador).
+        // TextView.CollapseLines oculta la fila entera, pero AvaloniaEdit falla al medir si la
+        // línea del scroll o el documento completo quedan colapsados.
+        _folding ??= FoldingManager.Install(Editor.TextArea);
+        foreach (var margin in Editor.TextArea.LeftMargins.OfType<FoldingMargin>().ToList())
+            Editor.TextArea.LeftMargins.Remove(margin);
 
-            foreach (var (start, end) in hiddenRuns)
+        foreach (var (start, end) in hiddenRuns)
+        {
+            var first = Document.GetLineByNumber(start + 1);
+            var last = Document.GetLineByNumber(end);
+            int foldStart = first.Offset;
+            if (foldStart >= last.EndOffset)
             {
-                var first = Document.GetLineByNumber(start + 1);
-                var last = Document.GetLineByNumber(end);
-                var fold = _folding.CreateFolding(first.Offset, last.EndOffset);
-                fold.Title = $"  ⋯ {end - start} línea(s) oculta(s)  ";
-                fold.IsFolded = true;
+                // Tramo de huecos vacíos: un plegado necesita al menos un carácter, así que se
+                // ancla al final de la línea anterior; al inicio del documento se dejan visibles.
+                if (first.PreviousLine is null) continue;
+                foldStart = first.PreviousLine.EndOffset;
             }
-        }
-        else
-        {
-            foreach (var (start, end) in hiddenRuns)
-                _collapsed.Add(TextView.CollapseLines(Document.GetLineByNumber(start + 1), Document.GetLineByNumber(end)));
+            var fold = _folding.CreateFolding(foldStart, last.EndOffset);
+            fold.Title = showCounts ? $"  ⋯ {end - start} línea(s) oculta(s)  " : " ⋯ ";
+            fold.IsFolded = true;
         }
     }
 
-    public void ClearFilter()
-    {
-        foreach (var section in _collapsed) section.Uncollapse();
-        _collapsed.Clear();
-        _folding?.Clear();
-    }
+    public void ClearFilter() => _folding?.Clear();
 
     public void Redraw()
     {

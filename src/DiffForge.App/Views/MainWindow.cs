@@ -38,14 +38,15 @@ public sealed class MainWindow : Window
         MinHeight = 400;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
+        Icon = AppIcon.Load();
         BuildMenu();
         _toolbarHost.Child = BuildToolbar();
         _toolbarHost.IsVisible = AppSettings.Current.Options.ShowToolbar;
         _toolbarHost.BorderThickness = new Thickness(0, 0, 0, 1);
-        _toolbarHost.BorderBrush = new SolidColorBrush(Color.FromArgb(50, 128, 128, 128));
+        _toolbarHost.Classes.Add("chrome");
 
         _tabs.SelectionChanged += (_, _) => RefreshCommandStates();
-        _tabs.Padding = new Thickness(0);
+        _tabs.Classes.Add("docs");
 
         var root = new DockPanel();
         DockPanel.SetDock(_menu, Dock.Top);
@@ -80,14 +81,13 @@ public sealed class MainWindow : Window
     {
         var view = new TextCompareView();
         var title = new TextBlock { Text = "Nueva comparación", VerticalAlignment = VerticalAlignment.Center, MaxWidth = 320, TextTrimming = TextTrimming.CharacterEllipsis };
-        var close = new Button { Content = "✕", Padding = new Thickness(5, 0), Margin = new Thickness(6, 0, 0, 0), Background = Brushes.Transparent, FontSize = 11 };
+        var close = new Button { Content = "✕", Padding = new Thickness(6, 2), Margin = new Thickness(8, 0, 0, 0), FontSize = 10, VerticalAlignment = VerticalAlignment.Center };
+        close.Classes.Add("subtle");
+        ToolTip.SetTip(close, "Cerrar pestaña (Ctrl+W)");
         var tab = new TabItem
         {
             Header = new StackPanel { Orientation = Orientation.Horizontal, Children = { title, close } },
             Content = view,
-            FontSize = 13,
-            MinHeight = 30,
-            Padding = new Thickness(10, 2),
         };
         close.Click += async (_, _) => await CloseTabAsync(tab);
         view.TitleChanged += () =>
@@ -169,26 +169,39 @@ public sealed class MainWindow : Window
 
     private Control BuildToolbar()
     {
-        var bar = new WrapPanel { Margin = new Thickness(4, 2) };
+        var bar = new WrapPanel { Margin = new Thickness(6, 4) };
+        bool fluentIcons = OperatingSystem.IsWindows();
         CommandDef? previous = null;
         foreach (var def in AppCommands.All.Where(c => c.ToolbarGlyph is not null))
         {
             if (previous is not null && previous.Menu != def.Menu)
-                bar.Children.Add(new Border { Width = 1, Margin = new Thickness(6, 4), Background = new SolidColorBrush(Color.FromArgb(70, 128, 128, 128)) });
+            {
+                var divider = new Border { Width = 1, Margin = new Thickness(6, 8) };
+                divider.Bind(Border.BackgroundProperty, divider.GetResourceObservable("DfBorderBrush"));
+                bar.Children.Add(divider);
+            }
+
+            var icon = new TextBlock
+            {
+                Text = fluentIcons && AppCommands.FluentIcons.TryGetValue(def.Id, out var glyph) ? glyph : def.ToolbarGlyph,
+                FontSize = 16,
+                Height = 20,
+                HorizontalAlignment = HorizontalAlignment.Center,
+            };
+            if (fluentIcons && AppCommands.FluentIcons.ContainsKey(def.Id)) icon.Classes.Add("icon");
             var button = new Button
             {
-                Background = Brushes.Transparent,
-                Padding = new Thickness(6, 2),
-                Margin = new Thickness(1),
                 Content = new StackPanel
                 {
+                    Spacing = 2,
                     Children =
                     {
-                        new TextBlock { Text = def.ToolbarGlyph, FontSize = 16, HorizontalAlignment = HorizontalAlignment.Center },
-                        new TextBlock { Text = def.ToolbarLabel, FontSize = 10, HorizontalAlignment = HorizontalAlignment.Center },
+                        icon,
+                        new TextBlock { Text = def.ToolbarLabel, FontSize = 11, HorizontalAlignment = HorizontalAlignment.Center },
                     },
                 },
             };
+            button.Classes.Add("tool");
             ToolTip.SetTip(button, def.Gesture is null ? def.Header : $"{def.Header} ({def.Gesture})");
             var id = def.Id;
             button.Click += async (_, _) => await ExecuteAsync(id);
@@ -211,8 +224,7 @@ public sealed class MainWindow : Window
         }
         foreach (var (id, button) in _toolButtons)
         {
-            bool isChecked = view?.IsChecked(id) == true;
-            button.Background = isChecked ? new SolidColorBrush(Color.FromArgb(60, 100, 140, 220)) : Brushes.Transparent;
+            button.Classes.Set("checked", view?.IsChecked(id) == true);
             button.IsEnabled = view is null || view.CanExecute(id);
         }
     }
@@ -256,8 +268,7 @@ public sealed class MainWindow : Window
                 _toolbarHost.IsVisible = !_toolbarHost.IsVisible;
                 break;
             case Cmd.About:
-                await MessageBox.ShowAsync(this, "Acerca de DiffForge",
-                    "DiffForge — comparador de texto\nAvalonia + .NET 8 · AvaloniaEdit\n\nProyecto propio: implementación independiente, sin código ni recursos de terceros.");
+                await new AboutDialog().ShowDialog(this);
                 break;
             case Cmd.KeyboardShortcuts:
                 await MessageBox.ShowAsync(this, "Atajos de teclado", string.Join("\n",

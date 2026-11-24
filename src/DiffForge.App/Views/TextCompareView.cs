@@ -76,7 +76,14 @@ public sealed partial class TextCompareView : UserControl
         {
             pane.UserEdited += OnUserEdited;
             pane.TextView.ScrollOffsetChanged += (_, _) => OnScrolled(pane);
-            pane.Editor.TextArea.GotFocus += (_, _) => { ActivePane = pane; UpdateStatus(); };
+            pane.Editor.TextArea.GotFocus += (_, _) =>
+            {
+                ActivePane = pane;
+                // Solo el panel activo resalta su línea actual; el otro mostraría una fila sin relación.
+                pane.Editor.Options.HighlightCurrentLine = true;
+                OtherPane.Editor.Options.HighlightCurrentLine = false;
+                UpdateStatus();
+            };
             pane.Editor.TextArea.Caret.PositionChanged += (_, _) => { if (pane == ActivePane) OnCaretMoved(); };
             pane.Editor.TextArea.AddHandler(PointerReleasedEvent, (_, _) => OnPanePointerReleased(pane), RoutingStrategies.Tunnel, handledEventsToo: true);
             pane.Editor.TextArea.AddHandler(KeyDownEvent, (s, e) => OnEditorKeyDown(pane, e), RoutingStrategies.Tunnel);
@@ -148,7 +155,7 @@ public sealed partial class TextCompareView : UserControl
 
     // ---------- Layout ----------
 
-    private static TextBlock StatusText() => new() { Margin = new Thickness(8, 0), VerticalAlignment = VerticalAlignment.Center };
+    private static TextBlock StatusText() => new() { Margin = new Thickness(8, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12 };
 
     private void BuildLayout()
     {
@@ -161,8 +168,7 @@ public sealed partial class TextCompareView : UserControl
         var status = new Border
         {
             BorderThickness = new Thickness(0, 1, 0, 0),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(60, 128, 128, 128)),
-            Padding = new Thickness(0, 3),
+            Padding = new Thickness(4, 4),
             Child = new DockPanel
             {
                 Children =
@@ -176,6 +182,8 @@ public sealed partial class TextCompareView : UserControl
                 },
             },
         };
+        status.Classes.Add("chrome");
+        foreach (var t in new[] { _statusRow, _statusPosition, _statusMode, _statusTiming }) t.Classes.Add("muted");
         DockPanel.SetDock(status, Avalonia.Controls.Dock.Bottom);
         root.Children.Add(status);
 
@@ -188,7 +196,7 @@ public sealed partial class TextCompareView : UserControl
 
         _leftHost.Child = SidePanel(_leftHeader, LeftPane);
         _rightHost.Child = SidePanel(_rightHeader, RightPane);
-        _splitter.Background = new SolidColorBrush(Color.FromArgb(50, 128, 128, 128));
+        _splitter.Classes.Add("panes");
         root.Children.Add(_panesGrid);
         ArrangePanes();
 
@@ -217,7 +225,7 @@ public sealed partial class TextCompareView : UserControl
         _panesGrid.ColumnDefinitions.Clear();
         if (OverUnder)
         {
-            _panesGrid.RowDefinitions = new RowDefinitions("*,4,*");
+            _panesGrid.RowDefinitions = new RowDefinitions("*,3,*");
             _splitter.ResizeDirection = GridResizeDirection.Rows;
             Grid.SetRow(_leftHost, 0); Grid.SetColumn(_leftHost, 0);
             Grid.SetRow(_splitter, 1); Grid.SetColumn(_splitter, 0);
@@ -225,7 +233,7 @@ public sealed partial class TextCompareView : UserControl
         }
         else
         {
-            _panesGrid.ColumnDefinitions = new ColumnDefinitions("*,4,*");
+            _panesGrid.ColumnDefinitions = new ColumnDefinitions("*,3,*");
             _splitter.ResizeDirection = GridResizeDirection.Columns;
             Grid.SetColumn(_leftHost, 0); Grid.SetRow(_leftHost, 0);
             Grid.SetColumn(_splitter, 1); Grid.SetRow(_splitter, 0);
@@ -300,7 +308,10 @@ public sealed partial class TextCompareView : UserControl
     {
         try
         {
-            var doc = await DocumentService.LoadAsync(spec.Trim().Trim('"'), previous.FormatOverride, previous.EncodingOverride);
+            spec = spec.Trim().Trim('"');
+            // Rutas locales en forma canónica del sistema (C:/a/b → C:\a\b); las URL quedan igual.
+            if (!spec.Contains("://")) spec = Path.GetFullPath(spec);
+            var doc = await DocumentService.LoadAsync(spec, previous.FormatOverride, previous.EncodingOverride);
             AddRecent(doc.Spec);
             return doc;
         }
@@ -716,6 +727,8 @@ public sealed partial class TextCompareView : UserControl
         _statusTiming.Text = $"{result.Stats.Elapsed.TotalMilliseconds:0} ms";
     }
 
+    public string StatusMessage => _statusMessage.Text ?? string.Empty;
+
     public void SetMessage(string message)
     {
         _statusMessage.Text = message;
@@ -748,14 +761,21 @@ public sealed partial class TextCompareView : UserControl
         private readonly TextCompareView _view;
         private readonly Side _side;
         private readonly TextBox _path = new() { Watermark = "Ruta, archivo dentro de .zip o URL http(s)…" };
-        private readonly TextBlock _info = new() { FontSize = 11, Opacity = 0.75, Margin = new Thickness(4, 2, 4, 0), TextTrimming = TextTrimming.CharacterEllipsis };
+        private readonly TextBlock _info = new() { FontSize = 11.5, Margin = new Thickness(6, 4, 4, 0), TextTrimming = TextTrimming.CharacterEllipsis };
 
         public SideHeader(TextCompareView view, Side side)
         {
             _view = view;
             _side = side;
-            Padding = new Thickness(4);
-            var browse = new Button { Content = "…", Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(10, 4) };
+            Padding = new Thickness(8, 8, 8, 6);
+            BorderThickness = new Thickness(0, 0, 0, 1);
+            Classes.Add("chrome");
+            _path.Classes.Add("path");
+            _info.Classes.Add("muted");
+            var browseIcon = new TextBlock { Text = OperatingSystem.IsWindows() ? "" : "…", FontSize = 15 };
+            if (OperatingSystem.IsWindows()) browseIcon.Classes.Add("icon");
+            var browse = new Button { Content = browseIcon, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(9, 6), VerticalAlignment = VerticalAlignment.Stretch };
+            browse.Classes.Add("subtle");
             ToolTip.SetTip(browse, "Examinar");
             browse.Click += async (_, _) => await _view.BrowseAsync(_side);
             _path.KeyDown += async (_, e) =>

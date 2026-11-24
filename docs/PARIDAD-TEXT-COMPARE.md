@@ -6,6 +6,10 @@ sesión, formatos, opciones). La implementación es propia; la interfaz y los at
 Leyenda: ✅ hecho y probado en la app · 🟢 hecho, cubierto por tests o build pero no probado a mano en la UI ·
 🟡 parcial · ⛔ no disponible (depende de otro tipo de sesión o de una integración externa)
 
+Todos los comandos 🟢 de los menús se ejecutan además en `tests/DiffForge.App.Tests` (UI sin pantalla):
+en ambos paneles, dos veces seguidas y en secuencia sobre archivos límite (huecos al inicio/fin, CR, tabs,
+líneas de 20 000 caracteres, unicode, sin salto final), verificando que no haya excepciones ni desalineación.
+
 ## Vista
 | Función | Estado | Nota |
 |---|---|---|
@@ -18,7 +22,7 @@ Leyenda: ✅ hecho y probado en la app · 🟢 hecho, cubierto por tests o build
 | Información de archivo (fecha, tamaño, encoding, EOL, formato) | ✅ | |
 | Ajuste de línea, espacios visibles, números de línea, sintaxis | 🟢 | |
 | Fuente, aumentar/disminuir/restablecer tamaño | 🟢 | |
-| Mostrar todo / diferencias / iguales / contexto / nada | 🟢 | Con o sin contador de líneas ocultas |
+| Mostrar todo / diferencias / iguales / contexto / nada | 🟢 | Cada tramo oculto deja una fila "⋯" (con o sin contador) |
 | Ignorar diferencias sin importancia | 🟢 | |
 | Páginas web | ⛔ | Avalonia no trae un WebView |
 

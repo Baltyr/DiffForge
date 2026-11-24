@@ -1,9 +1,126 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="DiffForge.App.App"
+             Name="DiffForge"
              RequestedThemeVariant="Default">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="DfSurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="DfChromeBrush" Color="#F5F6FA" />
+          <SolidColorBrush x:Key="DfBorderBrush" Color="#E2E4EB" />
+          <SolidColorBrush x:Key="DfMutedBrush" Color="#6B7180" />
+          <SolidColorBrush x:Key="DfHoverBrush" Color="#E9EBF3" />
+          <SolidColorBrush x:Key="DfCheckedBrush" Color="#E3E6FF" />
+          <SolidColorBrush x:Key="DfAccentTextBrush" Color="#4338CA" />
+          <SolidColorBrush x:Key="DfCurrentLineBrush" Color="#0C4F46E5" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="DfSurfaceBrush" Color="#1C1D22" />
+          <SolidColorBrush x:Key="DfChromeBrush" Color="#24262D" />
+          <SolidColorBrush x:Key="DfBorderBrush" Color="#33363F" />
+          <SolidColorBrush x:Key="DfMutedBrush" Color="#9CA1AE" />
+          <SolidColorBrush x:Key="DfHoverBrush" Color="#2F323B" />
+          <SolidColorBrush x:Key="DfCheckedBrush" Color="#33326B" />
+          <SolidColorBrush x:Key="DfAccentTextBrush" Color="#B4BBFF" />
+          <SolidColorBrush x:Key="DfCurrentLineBrush" Color="#16A5B4FC" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
   <Application.Styles>
-    <FluentTheme DensityStyle="Compact" />
+    <FluentTheme DensityStyle="Compact">
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#4F46E5" />
+        <ColorPaletteResources x:Key="Dark" Accent="#818CF8" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
     <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
+
+    <Style Selector="Window">
+      <Setter Property="Background" Value="{DynamicResource DfSurfaceBrush}" />
+      <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Inter, sans-serif" />
+    </Style>
+
+    <!-- Franjas de interfaz (menú, barra, pestañas, estado) -->
+    <Style Selector="Border.chrome">
+      <Setter Property="Background" Value="{DynamicResource DfChromeBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DfBorderBrush}" />
+    </Style>
+    <Style Selector="Menu">
+      <Setter Property="Background" Value="{DynamicResource DfChromeBrush}" />
+      <Setter Property="Padding" Value="4,2" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{DynamicResource DfMutedBrush}" />
+    </Style>
+    <Style Selector="TextBlock.icon">
+      <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+    </Style>
+
+    <!-- Botones de la barra de herramientas -->
+    <Style Selector="Button.tool">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="Margin" Value="1,0" />
+      <Setter Property="MinWidth" Value="58" />
+    </Style>
+    <Style Selector="Button.tool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource DfHoverBrush}" />
+    </Style>
+    <Style Selector="Button.tool.checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource DfCheckedBrush}" />
+    </Style>
+    <Style Selector="Button.tool.checked TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource DfAccentTextBrush}" />
+    </Style>
+    <Style Selector="Button.tool:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.tool:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+
+    <!-- Botones discretos (cerrar pestaña, examinar, cerrar búsqueda) -->
+    <Style Selector="Button.subtle">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="Button.subtle:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource DfHoverBrush}" />
+    </Style>
+
+    <!-- Pestañas de diálogos: más compactas que el estilo Fluent por defecto -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="10,0" />
+    </Style>
+
+    <!-- Pestañas de comparación -->
+    <Style Selector="TabControl.docs">
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="TabControl.docs TabItem">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="12,0,6,0" />
+    </Style>
+
+    <!-- Encabezado de cada panel -->
+    <Style Selector="TextBox.path">
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="8,5" />
+      <Setter Property="FontSize" Value="12.5" />
+    </Style>
+
+    <Style Selector="GridSplitter.panes">
+      <Setter Property="Background" Value="{DynamicResource DfBorderBrush}" />
+    </Style>
   </Application.Styles>
 </Application>

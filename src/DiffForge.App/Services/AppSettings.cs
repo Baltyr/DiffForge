@@ -120,8 +120,11 @@ public sealed class AppSettings
     public List<string> RecentFiles { get; set; } = [];
     public List<string> FindHistory { get; set; } = [];
 
+    /// <summary>Carpeta de configuración; <c>DIFFFORGE_HOME</c> la redirige (tests, modo portable).</summary>
     public static string Folder =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DiffForge");
+        Environment.GetEnvironmentVariable("DIFFFORGE_HOME") is { Length: > 0 } home
+            ? home
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DiffForge");
 
     private static string FilePath => Path.Combine(Folder, "settings.json");
 

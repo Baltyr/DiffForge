@@ -12,7 +12,8 @@ namespace DiffForge.App.Editor;
 /// </summary>
 public sealed class ThumbnailControl : Control
 {
-    private static readonly IPen ViewportPen = new Pen(Brushes.Gray, 1);
+    private static readonly IBrush ViewportFill = new SolidColorBrush(Color.FromArgb(40, 99, 102, 241));
+    private static readonly IPen ViewportPen = new Pen(new SolidColorBrush(Color.FromArgb(110, 99, 102, 241)), 1);
 
     public CompareRenderState? State { get; set; }
     public double ViewportTop { get; set; }
@@ -24,14 +25,15 @@ public sealed class ThumbnailControl : Control
 
     public ThumbnailControl()
     {
-        Width = 28;
+        Width = 24;
         ClipToBounds = true;
         Cursor = new Cursor(StandardCursorType.Hand);
     }
 
     public override void Render(DrawingContext context)
     {
-        context.FillRectangle(Brushes.Transparent, new Rect(Bounds.Size));
+        var background = this.TryFindResource("DfChromeBrush", ActualThemeVariant, out var res) && res is IBrush b ? b : Brushes.Transparent;
+        context.FillRectangle(background, new Rect(Bounds.Size));
         if (State is null) return;
 
         var rows = State.Rows;
@@ -54,8 +56,9 @@ public sealed class ThumbnailControl : Control
             else context.FillRectangle(colors.Filler, new Rect(3 + half + 1, y, half - 1, height));
         }
 
-        if (ViewportHeight > 0)
-            context.DrawRectangle(null, ViewportPen, new Rect(0.5, ViewportTop * h + 0.5, w - 1, Math.Max(ViewportHeight * h, 4)));
+        // Solo si hay scroll: con todo el archivo a la vista el marco no aporta nada.
+        if (ViewportHeight > 0 && ViewportHeight < 0.999)
+            context.DrawRectangle(ViewportFill, ViewportPen, new Rect(1.5, ViewportTop * h + 0.5, w - 3, Math.Max(ViewportHeight * h, 6)), 3, 3);
 
         if (CurrentRow >= 0)
         {
@@ -68,7 +71,7 @@ public sealed class ThumbnailControl : Control
                 g.LineTo(new Point(0, y + 4));
                 g.EndFigure(true);
             }
-            context.DrawGeometry(Brushes.DimGray, null, geometry);
+            context.DrawGeometry(new SolidColorBrush(Color.FromRgb(99, 102, 241)), null, geometry);
         }
     }
 
